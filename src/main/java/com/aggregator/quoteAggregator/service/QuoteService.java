@@ -18,6 +18,7 @@ import reactor.core.publisher.Mono;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,8 +36,7 @@ public class QuoteService {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private WebClient.Builder webClientBuilder;  // Injecting WebClient Builder
+    private final WebClient webClient= WebClient.builder().build();;  // Injecting WebClient Builder
 
     // Fetch a random quote from an active source
     public Mono<String> fetchRandomQuote(String author) {
@@ -45,22 +45,22 @@ public class QuoteService {
                 .orElseGet(() -> quoteSourceRepository.findByIsActiveTrue());
 
         if (source != null) {
-            // Fetch quote from the external API using WebClient
-            String apiUrl = source.getApiUrl();
-            if(author!=null && !author.isEmpty() && source.getName()!=null && !source.getName().isEmpty() && source.getName().equalsIgnoreCase("simpsons"))
-                apiUrl=apiUrl+"?character="+author;
-            WebClient.Builder builder = webClientBuilder.baseUrl(apiUrl);
-            // If the API key exists, add it to the request header with the key 'X-Api-Key'
-            if (source.getApiKey() != null && !source.getApiKey().isEmpty()) {
-                builder = builder.defaultHeader("X-Api-Key", source.getApiKey());
-            }
-            return builder
-                    .build()
-                    .get()
-                    .retrieve()
+            String modifiedUrl = source.getApiUrl();
+            if(author!=null && !author.isEmpty())
+                 modifiedUrl = modifiedUrl + "?character=" + author;
+            WebClient.RequestHeadersSpec<?> requestSpec = createRequest(source,modifiedUrl);
+            return requestSpec.retrieve()
                     .bodyToMono(String.class);
         }
         return Mono.just("No active quote sources available");
+    }
+
+    private WebClient.RequestHeadersSpec<?> createRequest(QuoteSource quoteSource, String modifiedUrl) {
+        WebClient.RequestBodySpec requestBodySpec = webClient
+                .method(org.springframework.http.HttpMethod.valueOf(quoteSource.getHttpMethod()))
+                .uri(modifiedUrl);
+        quoteSource.getHeaders().forEach(requestBodySpec::header);
+        return requestBodySpec;
     }
 
     // Allow a user to vote for a quote
@@ -96,6 +96,9 @@ public class QuoteService {
     public QuoteSource addQuoteSource(QuoteSourceDto quoteSourceDto) {
         QuoteSource quoteSource = new QuoteSource();
         BeanUtils.copyProperties(quoteSourceDto, quoteSource);
+        if (quoteSourceDto.getHeaders() != null) {
+            quoteSource.setHeaders(new HashMap<>(quoteSourceDto.getHeaders()));
+        }
         return quoteSourceRepository.save(quoteSource);
     }
 

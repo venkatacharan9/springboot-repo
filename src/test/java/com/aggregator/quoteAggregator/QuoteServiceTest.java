@@ -47,7 +47,7 @@ class QuoteServiceTest {
 
         QuoteSource activeQuoteSource = new QuoteSource();
         activeQuoteSource.setApiUrl("https://thesimpsonsquoteapi.glitch.me/quotes");
-        activeQuoteSource.setApiKey("some-api-key");
+        activeQuoteSource.setHttpMethod("GET");
         activeQuoteSource.setName("Simpsons");
         activeQuoteSource.setActive(true);
 

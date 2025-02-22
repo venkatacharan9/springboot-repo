@@ -26,8 +26,17 @@ CREATE TABLE quote_sources (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     api_url VARCHAR(255) NOT NULL UNIQUE,
-    api_key VARCHAR(255),
+    http_method VARCHAR(255),
     is_active BOOLEAN DEFAULT TRUE
+);
+
+-- Create quote_sources_headers table
+CREATE TABLE quote_sources_headers (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    quote_sources_id BIGINT NOT NULL,
+    headers_key VARCHAR(255) ,
+    headers_value VARCHAR(255),
+    FOREIGN KEY (quote_sources_id) REFERENCES quote_sources(id) ON DELETE CASCADE
 );
 
 -- Create quote_ratings table
@@ -54,7 +63,10 @@ INSERT INTO user_roles (user_id, role_id) VALUES (1, 1);
 INSERT INTO user_roles (user_id, role_id) VALUES (2, 2);
 
 -- Insert default quote sources
-INSERT INTO quote_sources (name, api_url, api_key, is_active) VALUES ('Simpsons', 'https://thesimpsonsquoteapi.glitch.me/quotes', NULL, TRUE);
-INSERT INTO quote_sources (name, api_url, api_key, is_active) VALUES ('Ninja', 'https://api.api-ninjas.com/v1/quotes', '0owcCReQcp+ENZXcKVJBNw==ydZpvsKjqEg4WDND', TRUE);
-INSERT INTO quote_sources (name, api_url, api_key, is_active) VALUES ('ZenQuotes', 'https://zenquotes.io/api/random',NULL, TRUE);
+INSERT INTO quote_sources (name, api_url, http_method, is_active) VALUES ('Simpsons', 'https://thesimpsonsquoteapi.glitch.me/quotes', 'GET', TRUE);
+INSERT INTO quote_sources (name, api_url, http_method, is_active) VALUES ('Ninja', 'https://api.api-ninjas.com/v1/quotes', 'GET', TRUE);
+INSERT INTO quote_sources (name, api_url, http_method, is_active) VALUES ('ZenQuotes', 'https://zenquotes.io/api/random','GET', TRUE);
+
+INSERT INTO quote_sources_headers (quote_sources_id, headers_key, headers_value) VALUES
+(2, 'x-api-key', '0owcCReQcp+ENZXcKVJBNw==ydZpvsKjqEg4WDND');
 
